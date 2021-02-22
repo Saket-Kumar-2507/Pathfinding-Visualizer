@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <title>Pathfinding Visualiser</title>
+</head>
+
+<style>
+    ul
+    {
+        height: 32px;
+        padding-top: 3px;
+        padding-bottom: 15px;
+        margin: 4px 4px 4px 0px;
+        background-color: rgb(44, 42, 42);
+        border-radius: 4px;
+        display: flex;
+        margin-bottom: 20px;
+    }
+
+    .item
+    {
+        font-style: italic;
+        color: rgb(170, 43, 49);
+        font-size: 25px;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+        list-style: none;
+    }
+
+    .start
+    {
+        float: right;
+    }
+    #instructions{
+        margin-left: 600px;
+        float: right;
+    }
+</style>
+
+<body>
+    <div id= "container">
+        <ul>
+            <li class="item">
+                <label>Path finding algo</label>
+                <select>
+                    <option value="dijkstra" selected>Dijkstra</option>                               <!--writing selected creates a by default selected company in the dropbox in the form-->
+                </select>
+            </li>
+
+            <button onclick= "erase()">Eraser</button>
+            <button onclick= "draw()">Draw maze</button>
+            <button id="btn" onclick= "generate_source_dest()">Select Diner</button>
+            <button id="strt" onclick = "start_pathfind()">Find Path</button>
+            <button  onclick = "clear_screen()">Clear Screen</button>
+            <button id ="instructions" onclick="instructions()">Instructions</button>
+        </ul>    
+    </div>
+
+    <script>
+        var c = 1 , rows = 24 , columns = 56 , N = (rows*columns) , speed =8, exons=[0], arr;
+        var pixels = "25px";
+        //rows = 130 , columns = 297 , N = (rows*columns);
+        var i, j , temp , square , str , count =1;
+        var intervalID=0 ,change= 0 ;
+        var source_row = 5 , source_column = 13;
+        var dest_row = 17 , dest_column = 25;
+        var source_loc = get_loc(source_row,source_column);
+        var dest_loc = get_loc(dest_row,dest_column);
+
+        var body = document.body;
+        var chessboard = document.createElement('div');
+        chessboard.style.width = "1512px";
+        chessboard.style.height = "648px";
+        chessboard.style.border = "1px solid black";
+        body.appendChild(chessboard);
+
+        // generate_source_dest();
+
+        function get_loc(a,b)
+        { return ((a-1)*columns)+b; }
+
+        for (i = 1; i <= rows; i++) 
+        {
+            for (j = 1; j <= columns; j++) 
+            {	
+                square = document.createElement("div");
+                str = get_loc(i,j);
+                str = str.toString();
+                square.setAttribute("id",str);
+                square.setAttribute("class","box");
+                square.style.width = pixels;
+                square.style.height = pixels;
+                square.style.float = "left";
+                
+                square.style.background = "white";
+                square.style.border = "1px solid green";
+                chessboard.appendChild(square);
+            }
+        }
+
+        function instructions()
+        {
+            alert('1.) Click on "Select Diner" so that source and destination becomes visible \n\n2.) Click on "Draw maze". When you click on it, "Pencil" will start functioning.\n Rules of working of the pencil:\n ->Pencil can be started on a single mouse click.\n ->Once the pencil has started, you just have to drag the mouse on the boxes (without keeping the mouse button clicked, i.e. you can release the mouse button after a single click) and it will automatically get coloured.\n ->To stop the pencil, just click on the mouse button once (same as you started it). \n\n3.) To erase some pieces of maze, click on "Eraser". Eraser will get activated. Click on the box which you want to turn white. \n\n4.) Click on "Find path" .\n\n5.) To clear the screen, click on "Clear Screen".');
+        }
+        function hover_event()
+        {
+            if(c>2)
+            { return; }
+
+            for(i=1 ; i<=N ; i++)
+            {
+                str = i.toString();
+                temp = document.getElementById(str);
+                if(c==1)
+                { 
+                    temp.addEventListener("mouseleave",change_color_black);
+                }
+                else
+                { 
+                    temp.removeEventListener("mouseleave",change_color_black);
+                }
+                
+            }
+
+            if(c==1)
+            { c=0; }
+            else
+            { c=1; }
+        }
+
+        function change_color_black()
+        { 
+            if(event.target.style.backgroundColor!="blue" || event.target.style.backgroundColor!="red")
+            { event.target.style.backgroundColor = "black"; } 
+        }
+
+        function change_color_white()
+        { 
+            if(event.target.style.backgroundColor!="blue" || event.target.style.backgroundColor!="red")
+            { event.target.style.backgroundColor = "white"; } 
+        }
+
+        function draw()
+        { 
+            chessboard.addEventListener("click",hover_event); 
+            for(i=1 ; i<=N ; i++)
+            {
+                str = i.toString();
+                temp = document.getElementById(str);
+                temp.removeEventListener("click",change_color_white);   
+            }
+
+            // document.getElementsByClassName("box").removeEventListener("mouseleave",change_color_white); 
+        }
+
+        function erase()
+        { 
+            chessboard.removeEventListener("click",hover_event); 
+
+            for(i=1 ; i<=N ; i++)
+            {
+                str = i.toString();
+                temp = document.getElementById(str);
+                temp.addEventListener("click",change_color_white);    
+            }
+            // document.getElementsByClassName("box").addEventListener("mouseleave",change_color_white);
+        }
+
+        function generate_source_dest()
+        {
+            str = get_loc(source_row,source_column);
+            source_loc = str;
+            str = str.toString();
+            square = document.getElementById(str);
+            square.style.background = "red";
+
+            str = get_loc(dest_row,dest_column);
+            dest_loc = str;
+            str = str.toString();
+            square = document.getElementById(str);
+            square.style.background = "blue";
+        }
+
+        function clear_screen()
+        {
+            
+            if(intervalID.length!=0)
+            {    
+                clearInterval(intervalID[i]); 
+                intervalID= 0; 
+            }
+
+            for(i=1;i<=N;i++)
+            {
+                str = i.toString();
+                square = document.getElementById(str);
+                if(square.style.backgroundColor!="blue" || square.style.backgroundColor!="red")
+                {
+                    square.style.backgroundColor = "white";
+                    square.style.transitionDuration = "0s";
+                }
+            }
+            // exons= [0];
+            
+        }
+
+        function color_change(str,color)
+        {
+            str = str.toString();
+            square = document.getElementById(str);
+            square.style.transitionDuration = "0s";
+            square.style.backgroundColor = color;      
+        }
+
+        ////-------------------------------------------------Shortest path finding --------------------------------------------
+
+        function min(a,b)
+        {
+            if(a<=b)
+            { return a; }
+            else
+            { return b; }
+        }
+
+        function dijkstra_algo(exon , source_loc , dest_loc , arr , shortest_path ,  code)
+        {
+            let stat ,k ,count=0 ;
+            intervalID = [];
+                
+            let arr1 = [];
+            for(k=0;k<arr.length;k++)
+            { arr1.push(arr[k]); }
+                    
+            while(arr1.length>0)
+            {
+                stat= arr1[0];
+                arr1.shift();
+                    
+                if(exon[stat].length>1)
+                {
+                    for(i=1; i < exon[stat].length ;i++)
+                    { 
+                        //relaxation
+                        if( (shortest_path[stat]+exon[stat][i].edge_weight) < shortest_path[exon[stat][i].vertex])
+                        { 
+                            shortest_path[exon[stat][i].vertex]= (shortest_path[stat]+exon[stat][i].edge_weight);
+                            if(code==1)
+                            {
+                                str = exon[stat][i].vertex;
+                                if(str!=dest_loc)
+                                {
+                                    intervalID.push(setTimeout(color_change,count*7,str,"orange"));
+                                    count++;
+                                }
+                            }
+                        }
+                            
+                    }
+                }
+                if(stat==dest_loc)
+                { break; }
+            }
+                    
+        
+            let pathway=[];
+            value = dest_loc;
+            let prev_value = 0;
+
+            if(shortest_path[dest_loc]>=999999)
+            { return 0; }
+
+            for(j=1;j<=arr.length;j++)
+            {
+                if(prev_value == value)
+                { break; }
+                if(value == source_loc)
+                { break; }
+                //console.log(value);
+                for(i=1; i < exon[value].length ;i++)
+                {
+                    
+                    if( (shortest_path[value] - exon[value][i].edge_weight) == shortest_path[exon[value][i].vertex] )
+                    { 
+                        pathway.push(value);
+                        prev_value = value;
+                        value = exon[value][i].vertex;
+                        break; 
+                    }
+                }
+            }
+
+            temp = 
+            {
+                path: pathway,
+                cnt: count
+            }
+            return temp;
+                
+        }
+
+        // Path finding starts
+        function start_pathfind()
+        {
+            // ----------------------------------------- Creation of graph -----------------------------------
+            exons = [0];
+            let  exon , count=1 ,str1, location;
+
+            for(i=1;i<=rows;i++)
+            {
+                for(j=1;j<=columns;j++)
+                {
+                    exon= [0];
+                    str = get_loc(i,j);
+                    str = str.toString();
+                    square = document.getElementById(str);
+
+                    if(square.style.backgroundColor == "black")
+                    {
+                        exons.push(exon);
+                        continue;
+                    }
+                        
+                    if((i-1)>0)
+                    {
+                        str = get_loc(i-1,j);
+                        str1 = str;
+                        str = str.toString();
+                        square = document.getElementById(str);
+
+                        if(square.style.backgroundColor == "white" || square.style.backgroundColor == "red" || square.style.backgroundColor == "blue")
+                        {
+                            temp = {
+                            edge_weight: 1,
+                            vertex: str1
+                            };
+                            exon.push(temp);
+                        }
+                            
+                    }
+
+                    if((i+1)<=rows)
+                    {
+                        str = get_loc(i+1,j);
+                        str1 = str;
+                        str = str.toString();
+                        square = document.getElementById(str);
+
+                        if(square.style.backgroundColor == "white" || square.style.backgroundColor == "red" || square.style.backgroundColor == "blue")
+                        {
+                            temp = {
+                            edge_weight: 1,
+                            vertex: str1
+                            };
+                            exon.push(temp);
+                        }
+                    }
+
+                    if((j-1)>0)
+                    {
+                        str = get_loc(i,j-1);
+                        str1 = str;
+                        str = str.toString();
+                        square = document.getElementById(str);
+
+                        if(square.style.backgroundColor == "white" || square.style.backgroundColor == "red" || square.style.backgroundColor == "blue")
+                        {
+                            temp = {
+                            edge_weight: 1,
+                            vertex: str1
+                            };
+                            exon.push(temp);
+                        }
+                    }
+
+                    if((j+1)<=columns)
+                    {
+                        str = get_loc(i,j+1);
+                        str1 = str;
+                        str = str.toString();
+                        square = document.getElementById(str);
+
+                        if(square.style.backgroundColor == "white" || square.style.backgroundColor == "red" || square.style.backgroundColor == "blue")
+                        {
+                            temp = {
+                            edge_weight: 1,
+                            vertex: str1
+                            };
+                            exon.push(temp);
+                        }
+                    }
+
+                    exons.push(exon);
+                }    
+            }
+
+            let shortest_path = [999999] , visited = [false] , stat;
+            arr = [];
+            for(i=1;i<=N;i++)
+            { 
+                shortest_path.push(999999); 
+                visited.push(false);
+            }
+            shortest_path[source_loc]= 0;
+                
+            arr.push(source_loc);
+
+            for(j=0;j<=N;j++)
+            {
+                if(j<arr.length)
+                { stat = arr[j]; }
+                else{ break; }
+
+                for(i=1;i<exons[stat].length;i++)
+                {
+                    if(visited[exons[stat][i].vertex]==false)
+                    {
+                        arr.push(exons[stat][i].vertex);
+                        visited[exons[stat][i].vertex] = true;
+                    }
+                }
+            }
+
+            // -------------------------- End of creation of graph ------------------------------
+
+
+            let code=1;
+            temp = dijkstra_algo(exons,source_loc,dest_loc ,arr,shortest_path ,code );
+            //temp = bellmanford_algo(exons,source_loc,dest_loc,1);
+
+            if(temp==0)
+            { alert("Destination unreachable"); }
+               
+            if(code==1)
+            {
+                for(i= temp.path.length-1 ; i>=1 ; i--)
+                {
+                    str = temp.path[i];
+                    console.log(str);
+                    intervalID.push(setTimeout(color_change,10*i + (temp.cnt*7),str,"purple"));
+                }
+            }
+            if(intervalID!=0)
+            { clearInterval(intervalID); }
+            intervalID= setInterval(shift_source,speed,temp.path);
+        }
+
+    </script>
+</body>
